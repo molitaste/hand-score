@@ -4,19 +4,22 @@ on:
   workflow_dispatch:
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - run: mkdir proj && unzip -q HandScore-Android-Project.zip -d proj
+      - name: Extract project
+        run: python3 -m zipfile -e HandScore-Android-Project.zip proj && ls -la proj
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
+      - name: Accept Android licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
-      - run: cd proj && gradle assembleRelease --no-daemon
+      - name: Build
+        run: cd proj && gradle assembleRelease --no-daemon --stacktrace
       - run: cp proj/app/build/outputs/apk/release/app-release.apk HandScore.apk
       - uses: actions/upload-artifact@v4
         with:
